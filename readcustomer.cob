@@ -27,11 +27,11 @@ DATA DIVISION.
             *> keeps track of records read in from file
             05 REC-COUNTER      PIC 9(3) VALUE 0.
 
-LINKAGE SECTION.
-*> Table of size 10, contains customers from input file
+    LINKAGE SECTION.
+    *> Table of size 10, contains customers from input file
         01 CUSTOMER-TABLE.
             05 CUSTOMER                 OCCURS 10 TIMES INDEXED BY I.
-                10 CUSTOMER-NUMBER      PIC 9(10).
+                10 CUSTOMER-ID          PIC 9(10).
                 10 CUSTOMER-NAME        PIC A(23).
                 10 CUSTOMER-ADDRESS     PIC X(23).
                 10 CUSTOMER-CITY        PIC A(13).
@@ -61,7 +61,7 @@ PROCEDURE DIVISION USING CUSTOMER-TABLE.
 *> Reads current record from file inserts the data into the table
 200-PROCESS-CUSTOMERS.
     MOVE IN-RECORD TO CUSTOMER(I).*> insert record into table
-
+    
     READ IN-FILE*> retrieve next record from file
         AT END
             MOVE "Y" TO EOF-SWITCH

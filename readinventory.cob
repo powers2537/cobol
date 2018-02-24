@@ -11,7 +11,7 @@ DATA DIVISION.
     FILE SECTION.
         FD IN-FILE.
         01 IN-RECORD.
-            05 PID       PIC 9(11).
+            05 PID          PIC 9(11).
             05 NAME         PIC X(25).
             05 IN-STOCK     PIC 9(7).
             05 MIN-STOCK    PIC 9(7).
@@ -29,8 +29,8 @@ DATA DIVISION.
 LINKAGE SECTION.
 *> Table of size 24, contains INVENTORY from input file
         01 INVENTORY-TABLE.
-            05 INVENTORY        OCCURS 24 TIMES INDEXED BY I.
-                10 PRODUCT-NUMBER       PIC 9(11).
+            05 INVENTORY                OCCURS 24 TIMES INDEXED BY I.
+                10 PRODUCT-ID           PIC 9(11).
                 10 PRODUCT-NAME         PIC X(25).
                 10 PRODUCT-IN-STOCK     PIC 9(7).
                 10 PRODUCT-MIN-STOCK    PIC 9(7).
