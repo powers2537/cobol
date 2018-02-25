@@ -33,6 +33,7 @@ DATA DIVISION.
             05 INVALID-PRODUCT  PIC A(17) VALUE "INVALID PRODUCT  ".
 
         01 TEMP PIC 999v99 VALUE 000.00.
+        01 SUB-TOTAL PIC 999v99 VALUE 000.00.
         01 TOTAL PIC 999V99.
 
         01 COUNTERS.
@@ -92,8 +93,32 @@ PROCEDURE DIVISION USING CUSTOMER-TABLE, INVENTORY-TABLE.
         DISPLAY "number ordered " PRODUCT-ORDERED
         DISPLAY "original amount owed " CUSTOMER-OWES(I)
         DISPLAY "product price " PRODUCT-PRICE(J)
-        
-        COMPUTE TEMP = CUSTOMER-OWES(I) + (PRODUCT-PRICE(J) * PRODUCT-ORDERED)
+
+        COMPUTE SUB-TOTAL = (PRODUCT-PRICE(J) * PRODUCT-ORDERED)
+
+        EVALUATE SALE-CODE
+            WHEN "A" *> 10 percent off
+                COMPUTE SUB-TOTAL = SUB-TOTAL * .9
+                DISPLAY "sub-total (10% off) " SUB-TOTAL
+            WHEN "B" *> 20 percent off
+                COMPUTE SUB-TOTAL = SUB-TOTAL * .8
+                DISPLAY "sub-total (20% off) " SUB-TOTAL
+            WHEN "C" *> 25 percent off
+                COMPUTE SUB-TOTAL = SUB-TOTAL * .75
+                DISPLAY "sub-total (25% off) " SUB-TOTAL
+            WHEN "D" *> buy at least 3, get one free
+                IF PRODUCT-ORDERED > 3
+                    COMPUTE SUB-TOTAL = (PRODUCT-PRICE(J) * (PRODUCT-ORDERED - 1))
+                END-IF
+                DISPLAY "sub-total (buy at least 3, get 1) " SUB-TOTAL
+            WHEN "E" *> buy one, get one free
+                COMPUTE SUB-TOTAL = (PRODUCT-PRICE(J) * (PRODUCT-ORDERED / 2))
+                DISPLAY "sub-total (BOGO) " SUB-TOTAL
+            WHEN "Z" *> no discount
+                DISPLAY "sub-total (no discount) " SUB-TOTAL
+        END-EVALUATE
+
+        COMPUTE TEMP = CUSTOMER-OWES(I) + SUB-TOTAL
         
         DISPLAY "new ammount owed " TEMP
         DISPLAY "------------------"
