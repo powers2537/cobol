@@ -11,13 +11,16 @@ DATA DIVISION.
     FILE SECTION.
         *> input file definition
         FD IN-FILE.
-        01 IN-RECORD.
-            05 CID                  PIC 9(10).
-            05 PID                  PIC 9(11).
-            05 PRODUCT-ORDERED      PIC 9(6).
-            05 SALE-CODE            PIC A.
+        01 IN-RECORD. *> input from file
+            05 CID                  PIC 9(10). *>customer id
+            05 PID                  PIC 9(11). *> product id
+            05 PRODUCT-ORDERED      PIC 9.  *> # ordered
+            05 EMPTY                PIC X(5). *> white space in file
+                                              *> was interupting input
+            05 SALE-CODE            PIC A(1).  *> sale code
 
     WORKING-STORAGE SECTION.
+        *> reference to write-error program
         01 WRITE-ERROR      PIC X(11) VALUE "WRITE-ERROR".
 
         01 SWITCHES.
@@ -28,6 +31,9 @@ DATA DIVISION.
         01 ERRORS.*> used to build error report
             05 INVALID-CUSTOMER PIC A(17) VALUE "INVALID CUSTOMER ".
             05 INVALID-PRODUCT  PIC A(17) VALUE "INVALID PRODUCT  ".
+
+        01 TEMP PIC 999v99 VALUE 000.00.
+        01 TOTAL PIC 999V99.
 
         01 COUNTERS.
             *> keeps track of records read in from file
@@ -51,7 +57,7 @@ DATA DIVISION.
                 10 PRODUCT-NAME         PIC X(25).
                 10 PRODUCT-IN-STOCK     PIC 9(7).
                 10 PRODUCT-MIN-STOCK    PIC 9(7).
-                10 PRODUCT-PRICE        PIC S9(2)V9(2).
+                10 PRODUCT-PRICE        PIC 99V99.
 
 PROCEDURE DIVISION USING CUSTOMER-TABLE, INVENTORY-TABLE.
 
@@ -72,18 +78,30 @@ PROCEDURE DIVISION USING CUSTOMER-TABLE, INVENTORY-TABLE.
             ADD 1 TO REC-COUNTER
     END-READ.
 
-*> Reads current record from file inserts the data into the table
+*> Reads current record from file and processes
 200-PROCESS.
-
+    
+    MOVE "N" TO ALL-VALID.
     PERFORM 300-CHECK-CID.
 
     IF ALL-VALID = "Y" THEN
+
         *>      TODO
         *>  PERFORM CALCULATION OF NEW COST
+
+        DISPLAY "number ordered " PRODUCT-ORDERED
+        DISPLAY "original amount owed " CUSTOMER-OWES(I)
+        DISPLAY "product price " PRODUCT-PRICE(J)
+        
+        COMPUTE TEMP = CUSTOMER-OWES(I) + (PRODUCT-PRICE(J) * PRODUCT-ORDERED)
+        
+        DISPLAY "new ammount owed " TEMP
+        DISPLAY "------------------"
+
         *>  PERFORM INVENTORY UPDATE
+	
         *>  PERFORM GENERATE OUTPUT FILE
-        *>
-        DISPLAY "PROCEED WITH CALCULATIONS" *> DEBUG ONLY
+
     END-IF.
 
     READ IN-FILE*> retrieve next record from file
@@ -117,7 +135,8 @@ PROCEDURE DIVISION USING CUSTOMER-TABLE, INVENTORY-TABLE.
         MOVE "Y" TO ALL-VALID *> no errors with product. 
     END-SEARCH.
 
+	
+
 *> Clean up
 900-TERMINATE.
     CLOSE IN-FILE.
-

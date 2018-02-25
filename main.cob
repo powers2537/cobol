@@ -23,7 +23,7 @@ WORKING-STORAGE SECTION.
             10 PRODUCT-NAME         PIC X(25).
             10 PRODUCT-IN-STOCK     PIC 9(7).
             10 PRODUCT-MIN-STOCK    PIC 9(7).
-            10 PRODUCT-PRICE        PIC S9(2)V9(2).
+            10 PRODUCT-PRICE        PIC 99V99.
 
  PROCEDURE DIVISION.
  000-MAIN.

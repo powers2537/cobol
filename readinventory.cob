@@ -15,7 +15,7 @@ DATA DIVISION.
             05 NAME         PIC X(25).
             05 IN-STOCK     PIC 9(7).
             05 MIN-STOCK    PIC 9(7).
-            05 PRICE        PIC S9(2)V9(2).
+            05 PRICE        PIC 99V99.
 
     WORKING-STORAGE SECTION.
         01 SWITCHES.
@@ -34,7 +34,7 @@ LINKAGE SECTION.
                 10 PRODUCT-NAME         PIC X(25).
                 10 PRODUCT-IN-STOCK     PIC 9(7).
                 10 PRODUCT-MIN-STOCK    PIC 9(7).
-                10 PRODUCT-PRICE        PIC S9(2)V9(2).
+                10 PRODUCT-PRICE        PIC 99V99.
                 
 
 PROCEDURE DIVISION USING INVENTORY-TABLE.
