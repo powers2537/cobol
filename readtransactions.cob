@@ -26,21 +26,22 @@ DATA DIVISION.
         *> transaction processed file definition
         FD TRANSACTION-FILE.
         01 TRANSACTION-RECORD.
+            05 TRANSACT-CID                 PIC 9(10).
             05 TRANSACT-NAME                PIC A(23).
             05 TRANSACT-STREET              PIC X(23).
             05 TRANSACT-CITY                PIC A(13).
             05 TRANSACT-STATE               PIC A(12).
             05 TRANSACT-PID                 PIC 9(11).
             05 TRANSACT-ITEM                PIC X(25).
-            05 FILLER                       PIC X               VALUE SPACES.
-            05 TRANSACT-QUANTITY            PIC 9(7).
-            05 FILLER                       PIC X               VALUE SPACES.
+            05 TRANSACT-SPACEA              PIC A(1).
+            05 TRANSACT-QUANTITY            PIC 9(3).
+            05 TRANSACT-SPACEB              PIC A(1).
             05 TRANSACT-GROSS               PIC S9(3)V9(2).
-            05 FILLER                       PIC X               VALUE SPACES.
+            05 TRANSACT-SPACEC              PIC A(1).
             05 TRANSACT-DISCOUNT            PIC S9(3)V9(2).
-            05 FILLER                       PIC X               VALUE SPACES.
+            05 TRANSACT-SPACED              PIC A(1).
             05 TRANSACT-NET                 PIC S9(3)V9(2).
-            05 FILLER                       PIC X               VALUE SPACES.
+            05 TRANSACT-SPACEE              PIC A(1).
             05 TRANSACT-OWES                PIC S9(3)V9(2).
 
     WORKING-STORAGE SECTION.
@@ -151,13 +152,14 @@ PROCEDURE DIVISION USING CUSTOMER-TABLE, INVENTORY-TABLE.
         DISPLAY "new ammount owed " TEMP
         DISPLAY "------------------"
 
-        COMPUTE CUSTOMER-OWES(I) = TEMP
+        MOVE TEMP to CUSTOMER-OWES(I)
 
         *>  PERFORM INVENTORY UPDATE
 
         *>  PERFORM GENERATE OUTPUT FILE
         OPEN EXTEND TRANSACTION-FILE
 
+        MOVE CUSTOMER-ID(I) to TRANSACT-CID
         MOVE CUSTOMER-NAME(I) to TRANSACT-NAME
         MOVE CUSTOMER-ADDRESS(I) to TRANSACT-STREET
         MOVE CUSTOMER-CITY(I) to TRANSACT-CITY
@@ -169,6 +171,11 @@ PROCEDURE DIVISION USING CUSTOMER-TABLE, INVENTORY-TABLE.
         MOVE DISCOUNT to TRANSACT-DISCOUNT
         MOVE NET-COST to TRANSACT-NET
         MOVE TEMP to TRANSACT-OWES
+        MOVE " " to TRANSACT-SPACEA
+        MOVE " " to TRANSACT-SPACEB
+        MOVE " " to TRANSACT-SPACEC
+        MOVE " " to TRANSACT-SPACED
+        MOVE " " to TRANSACT-SPACEE
 
         WRITE TRANSACTION-RECORD
         CLOSE TRANSACTION-FILE
