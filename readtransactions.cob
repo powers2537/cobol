@@ -7,6 +7,10 @@ FILE-CONTROL.
     SELECT IN-FILE ASSIGN TO "transactions.dat"
         ORGANIZATION IS LINE SEQUENTIAL.
 
+    SELECT TRANSACTION-FILE ASSIGN TO "transact.txt"
+            ORGANIZATION IS LINE SEQUENTIAL
+            ACCESS MODE IS SEQUENTIAL.
+
 DATA DIVISION.
     FILE SECTION.
         *> input file definition
@@ -18,6 +22,26 @@ DATA DIVISION.
             05 EMPTY                PIC X(5). *> white space in file
                                               *> was interupting input
             05 SALE-CODE            PIC A(1).  *> sale code
+
+        *> transaction processed file definition
+        FD TRANSACTION-FILE.
+        01 TRANSACTION-RECORD.
+            05 TRANSACT-NAME                PIC A(23).
+            05 TRANSACT-STREET              PIC X(23).
+            05 TRANSACT-CITY                PIC A(13).
+            05 TRANSACT-STATE               PIC A(12).
+            05 TRANSACT-PID                 PIC 9(11).
+            05 TRANSACT-ITEM                PIC X(25).
+            05 FILLER                       PIC X               VALUE SPACES.
+            05 TRANSACT-QUANTITY            PIC 9(7).
+            05 FILLER                       PIC X               VALUE SPACES.
+            05 TRANSACT-GROSS               PIC S9(3)V9(2).
+            05 FILLER                       PIC X               VALUE SPACES.
+            05 TRANSACT-DISCOUNT            PIC S9(3)V9(2).
+            05 FILLER                       PIC X               VALUE SPACES.
+            05 TRANSACT-NET                 PIC S9(3)V9(2).
+            05 FILLER                       PIC X               VALUE SPACES.
+            05 TRANSACT-OWES                PIC S9(3)V9(2).
 
     WORKING-STORAGE SECTION.
         *> reference to write-error program
@@ -33,7 +57,9 @@ DATA DIVISION.
             05 INVALID-PRODUCT  PIC A(17) VALUE "INVALID PRODUCT  ".
 
         01 TEMP PIC 999v99 VALUE 000.00.
-        01 SUB-TOTAL PIC 999v99 VALUE 000.00.
+        01 GROSS-COST PIC 999v99 VALUE 000.00.
+        01 DISCOUNT PIC 999v99 VALUE 000.00.
+        01 NET-COST PIC 999v99 VALUE 000.00.
         01 TOTAL PIC 999V99.
 
         01 COUNTERS.
@@ -94,38 +120,58 @@ PROCEDURE DIVISION USING CUSTOMER-TABLE, INVENTORY-TABLE.
         DISPLAY "original amount owed " CUSTOMER-OWES(I)
         DISPLAY "product price " PRODUCT-PRICE(J)
 
-        COMPUTE SUB-TOTAL = (PRODUCT-PRICE(J) * PRODUCT-ORDERED)
+        COMPUTE GROSS-COST = (PRODUCT-PRICE(J) * PRODUCT-ORDERED)
+        DISPLAY "gross cost" GROSS-COST
 
         EVALUATE SALE-CODE
             WHEN "A" *> 10 percent off
-                COMPUTE SUB-TOTAL = SUB-TOTAL * .9
-                DISPLAY "sub-total (10% off) " SUB-TOTAL
+                COMPUTE DISCOUNT = GROSS-COST * .1
+                DISPLAY "discount (10% off) " DISCOUNT
             WHEN "B" *> 20 percent off
-                COMPUTE SUB-TOTAL = SUB-TOTAL * .8
-                DISPLAY "sub-total (20% off) " SUB-TOTAL
+                COMPUTE DISCOUNT = GROSS-COST * .2
+                DISPLAY "discount (20% off) " DISCOUNT
             WHEN "C" *> 25 percent off
-                COMPUTE SUB-TOTAL = SUB-TOTAL * .75
-                DISPLAY "sub-total (25% off) " SUB-TOTAL
+                COMPUTE DISCOUNT = GROSS-COST * .25
+                DISPLAY "discount (25% off) " DISCOUNT
             WHEN "D" *> buy at least 3, get one free
                 IF PRODUCT-ORDERED > 3
-                    COMPUTE SUB-TOTAL = (PRODUCT-PRICE(J) * (PRODUCT-ORDERED - 1))
+                    COMPUTE DISCOUNT = PRODUCT-PRICE(J)
                 END-IF
-                DISPLAY "sub-total (buy at least 3, get 1) " SUB-TOTAL
+                DISPLAY "discount (buy at least 3, get 1) " DISCOUNT
             WHEN "E" *> buy one, get one free
-                COMPUTE SUB-TOTAL = (PRODUCT-PRICE(J) * (PRODUCT-ORDERED / 2))
-                DISPLAY "sub-total (BOGO) " SUB-TOTAL
+                COMPUTE DISCOUNT = (PRODUCT-PRICE(J) * (PRODUCT-ORDERED / 2))
+                DISPLAY "discount (BOGO) " DISCOUNT
             WHEN "Z" *> no discount
-                DISPLAY "sub-total (no discount) " SUB-TOTAL
+                DISPLAY "(no discount)"
         END-EVALUATE
 
-        COMPUTE TEMP = CUSTOMER-OWES(I) + SUB-TOTAL
+        COMPUTE NET-COST = GROSS-COST - DISCOUNT
+        COMPUTE TEMP = CUSTOMER-OWES(I) + NET-COST
         
         DISPLAY "new ammount owed " TEMP
         DISPLAY "------------------"
 
+        COMPUTE CUSTOMER-OWES(I) = TEMP
+
         *>  PERFORM INVENTORY UPDATE
-	
+
         *>  PERFORM GENERATE OUTPUT FILE
+        OPEN EXTEND TRANSACTION-FILE
+
+        MOVE CUSTOMER-NAME(I) to TRANSACT-NAME
+        MOVE CUSTOMER-ADDRESS(I) to TRANSACT-STREET
+        MOVE CUSTOMER-CITY(I) to TRANSACT-CITY
+        MOVE CUSTOMER-STATE(I) TO TRANSACT-STATE
+        MOVE PRODUCT-ID(J) to TRANSACT-PID
+        MOVE PRODUCT-NAME(J) to TRANSACT-ITEM
+        MOVE PRODUCT-ORDERED to TRANSACT-QUANTITY
+        MOVE GROSS-COST to TRANSACT-GROSS
+        MOVE DISCOUNT to TRANSACT-DISCOUNT
+        MOVE NET-COST to TRANSACT-NET
+        MOVE TEMP to TRANSACT-OWES
+
+        WRITE TRANSACTION-RECORD
+        CLOSE TRANSACTION-FILE
 
     END-IF.
 
@@ -159,8 +205,6 @@ PROCEDURE DIVISION USING CUSTOMER-TABLE, INVENTORY-TABLE.
         WHEN PRODUCT-ID(J) = PID
         MOVE "Y" TO ALL-VALID *> no errors with product. 
     END-SEARCH.
-
-	
 
 *> Clean up
 900-TERMINATE.
